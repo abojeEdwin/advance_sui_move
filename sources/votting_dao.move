@@ -1,4 +1,4 @@
-module 0x0::votting_dao;
+module 0x0::votting_dao{
 
 const EXP_ERR: u64 = 1;
 const NOT_ELIGIBLE: u64 = 2;
@@ -26,7 +26,7 @@ public struct DoaMemeber has key, store {
 public struct Dao has key {
     id: UID,
     name: std::string::String,
-    decription: std::string::String,
+    description: std::string::String,
     creator: address,  
 }
 
@@ -42,7 +42,9 @@ public struct Proposal has key, store {
     support: u64,
     not_supporting: u64,
     exp: u64,
-    total: vector<address>
+    total: vector<address>,
+    name: std::string::String,
+    description: std::string::String
 }
 
 
@@ -51,7 +53,7 @@ fun init(_otw: VOTTING_DAO, ctx: &mut TxContext){
     let new_dao = Dao { 
         id: object::new(ctx),
         name: std::string::utf8(b"Sui Hub Africa DAO"),
-        decription: std::string::utf8(description),
+        description: std::string::utf8(description),
         creator:  ctx.sender()
         };
     // let rank1 = Rank
@@ -98,7 +100,7 @@ public entry fun votting(
      ctx: &mut TxContext
      ){
     // check if the period has expired
-    assert!(ctx.epoch() < proposal.exp, EXP_ERR);
+    assert!(ctx.epoch() > proposal.exp, EXP_ERR);
     // check the votter has votted
     let mut i = 0;
     while (i < vector::length(&proposal.total))
@@ -135,11 +137,12 @@ public entry fun votting(
 //     proposal.exp = ctx.epoch();
 // }
 
-public entry fun create_proposal( dao_id: address, member: &DoaMemeber, recipient: address, ctx: &mut TxContext) {
+public entry fun create_proposal( dao_id: address, member: &DoaMemeber, recipient: address,description : vector<u8>, ctx: &mut TxContext) {
     // membership check
     assert!(member.doa_address == dao_id, 0);
     // eligibility check
     assert!(&member.rank == Rank::User1 || &member.rank == Rank::User2, NOT_ELIGIBLE);
+
     let new_proposal = Proposal {
         id: object::new(ctx),
         dao: dao_id,
@@ -147,8 +150,12 @@ public entry fun create_proposal( dao_id: address, member: &DoaMemeber, recipien
         not_supporting: 0,
         exp: ctx.epoch() + 7,
         total: vector::empty<address>(),
+        name: std::string::utf8(b"A New Voting Proposal"),
+        description: std::string::utf8(description),
     };
 
     transfer::public_transfer(new_proposal, recipient);
+
+}
 
 }
